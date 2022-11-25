@@ -44,6 +44,12 @@ class brightsign:
         except requests.exceptions.ConnectionError as exc:
             self._log(f'Error connecting to player at {self.player_ip}: {exc}')
             return
+        except json.decoder.JSONDecodeError as exc:
+            # Log error
+            # This error could be caused by a password protected player
+            self._log(f'Error: {health_res.status_code}')
+            self._log(f'Error decoding JSON: {exc}')
+            return
         
         try:
             # send version request to player and try to parse json for result
@@ -59,8 +65,6 @@ class brightsign:
             self._log(f'Error: {exc}; Couldn\'t find a key in json')
             self._log(json_res)
             return
-    
-    
     
     
     def update(self, version: str = latest_ver):
