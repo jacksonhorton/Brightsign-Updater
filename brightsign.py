@@ -5,6 +5,7 @@ from datetime import datetime as dt
 
 class brightsign:
     
+    # specify the version you want to update to by default
     latest_ver = '8.5.31'
     
     def __init__(self, player_ip: str):
@@ -18,7 +19,7 @@ class brightsign:
       
       
     def _logInfo(self) -> None:
-        self._log(f'Info: (family: {self.player_family}, status: {self.status}, version: {self.version})')
+        self._log(f'INFO: (family: {self.player_family}, status: {self.status}, version: {self.version})')
     
     def _log(self, msg: str) -> None:
         
@@ -84,19 +85,35 @@ class brightsign:
 
 
         # the endpoint to update firmware
+        # this does require that they stick to their standard naming scheme every update
         update_endpoint = f'/download-firmware?url=https://bsncloud.s3.amazonaws.com/public/{self.player_family}-{self.latest_ver}-update.bsfw'
 
-        print(f'Starting on {self.player_ip}')
+        print(f'Starting on {self.player_ip}. Attempting update to {version}')
+        self._log(f'Attempting update to {version}')
         try:
             # Send request
             res = requests.get(f'{self.req_url}{update_endpoint}')
-            # Try to log
-            self._log(f'Request status ({res.status_code}) : {res.text}')
+            # Try to log and check if update worked
+            res_text = res.text
+            update_status_code = res.status_code
             res.close()
             
-            print(f'{self.player_ip} completed.')
+            # parse response text
+            update_status_code = res.status_code
+            json_update = json.loads(res_text)
+            update_status = json_update['data']['result']
+            
+            self._log(f'Request status ({update_status_code}) : {update_status}')
+            
+            print(f'{self.player_ip} completed. Result: {update_status}; result code: {update_status_code}')
+        
+        except KeyError as exc:
+            print(f'Exception: {exc}')
+            # log key error
+            self._log(f'Error: {exc}; possibly problem reading json.')
+            self._log('INFO: response json: {res_text}')
         except Exception as exc:
-            print("Exception:", exc)
+            print(f'Exception: {exc}')
             # Log exception that occurred
             self._log(f'Error: {exc}')
             return
